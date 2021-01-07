@@ -1,6 +1,6 @@
 ;;; git-commit-insert-issue.el --- Get issues list when typing "Fixes #"
 
-;; Copyright (C) 2015-2016 vindarel <ehvince@mailz.org>
+;; Copyright (C) 2015-2021 vindarel <ehvince@mailz.org>
 
 ;; Author: Vindarel
 ;; URL: https://gitlab.com/emacs-stuff/git-commit-insert-issue/
