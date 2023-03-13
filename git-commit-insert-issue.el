@@ -35,6 +35,9 @@
 (require 'projectile)  ;; update, 2020: now only used to get the project root. Alternatives?
 (require 's)
 
+;; originally in cl.el, it's deprecated. Should be cadr or cl-second.
+(defalias 'second #'cadr)
+
 (defvar git-commit-insert-issue-github-keywords '("Fixes" "fixes" "fix" "fixed"
                                 "close" "closes" "closed"
                                 "resolve" "resolves" "resolved")
