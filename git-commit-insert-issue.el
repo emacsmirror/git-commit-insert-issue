@@ -35,9 +35,6 @@
 (require 'projectile)  ;; update, 2020: now only used to get the project root. Alternatives?
 (require 's)
 
-;; originally in cl.el, it's deprecated. Should be cadr or cl-second.
-(defalias 'second #'cadr)
-
 (defvar git-commit-insert-issue-github-keywords '("Fixes" "fixes" "fix" "fixed"
                                 "close" "closes" "closed"
                                 "resolve" "resolves" "resolved")
@@ -62,8 +59,8 @@
 
 (defun git-commit-insert-issue-project-id (&optional project username)
   (let* ((group/project (or username (git-commit-insert-issue--get-group/project)))
-         (project (or project (second group/project))))
-    (format "%s/%s" (first group/project) project)))
+         (project (or project (cadr group/project))))
+    (format "%s/%s" (car group/project) project)))
 
 (defun git-commit-insert-issue-get-gitlab-issues (projectname username)
   "Manual call to Gitlab's AP v4: /projects/:id/issues. Get closed issues only.
@@ -76,6 +73,7 @@
         (glab-get (s-concat "/projects/" id "/issues?state=opened") nil :auth 'none)
       (error
                                         ;XXX: catch only the HTTP error?
+       (message "%s" (s-concat "id is " id))
        (error (format +git-commit-insert-issues-gitlab-api-error+ username))))))
 
 (defun git-commit-insert-issue-gitlab-issues (&optional projectname username)
@@ -85,25 +83,25 @@
 (defun git-commit-insert-issue-gitlab-issues-format (&optional username project-name)
   "Get issues and return a list of strings formatted with '#id - title'"
   (let* ((group/project (or username (git-commit-insert-issue--get-group/project)))
-         (project (or project-name (second group/project)))
-         (issues (git-commit-insert-issue-gitlab-issues project (first group/project))))
+         (project (or project-name (cadr group/project)))
+         (issues (git-commit-insert-issue-gitlab-issues project (car group/project))))
     (--map (format "#%i - %s" (alist-get 'iid it) (alist-get 'title it))
            issues)))
 
 (defun git-commit-insert-issue-github-issues (&optional username project-name)
   "Return a plist of github issues, raw from the api request."
   (let ((group/project (or username (git-commit-insert-issue--get-group/project)))
-        (project (or project-name (second (group/project)))))
-    (ghub-get (s-concat "/repos/" (first group/project) "/" project "/issues") nil :auth 'none)))
+        (project (or project-name (cadr (group/project)))))
+    (ghub-get (s-concat "/repos/" (car group/project) "/" project "/issues") nil :auth 'none)))
 
 (defun git-commit-insert-issue-github-issues-format (&optional username project-name)
   "Get all the issues from the current project.
    Return a list of formatted strings: '#id - title'"
   (let* ((group/project (or username (git-commit-insert-issue--get-group/project)))
-         (project (or project-name (second group/project)))
-         (issues (git-commit-insert-issue-github-issues (first group/project) project)))
+         (project (or project-name (cadr group/project)))
+         (issues (git-commit-insert-issue-github-issues (car group/project) project)))
     (if (string= (alist-get 'message issues) "Not Found")
-          (error (concat "Nothing found with user " (first group/project) " in project " (second group/project)))
+          (error (concat "Nothing found with user " (car group/project) " in project " (cadr group/project)))
       (progn
         ;;todo: watch for api rate limit.
         (setq git-commit-insert-issue-project-issues
@@ -114,8 +112,8 @@
 (defun git-commit-insert-issue-bitbucket-issues (&optional username project-name)
   "Return a list of bitbucket issues."
   (let* ((group/project (git-commit-insert-issue--get-group/project))
-         (project (or project-name (second group/project))))
-    (bitbucket-issues-list-all (first group/project) project)))
+         (project (or project-name (cadr group/project))))
+    (bitbucket-issues-list-all (car group/project) project)))
 
 (defun git-commit-insert-issue-bitbucket-issues-format (&optional username project-name)
   "Get issues and return a list of strings formatted with '#id - title'"
@@ -226,9 +224,9 @@
          (group (when group-project
                   (-first-item (s-split "/" (-first-item group-project)))))  ;; emacs-stuff
          (project (when group-project
-                    (second (s-split "/" (-first-item group-project))))) ;; project-name.git
+                    (cadr (s-split "/" (-first-item group-project))))) ;; project-name.git
          (project (when project
-                    (first (s-split "\\." project))))) ;; project-name
+                    (car (s-split "\\." project))))) ;; project-name
     (unless group
         (error "git-commit-insert-issue: we did not find the project's group name by reading your remote URL. To help us you can make sure your first [remote] in your .git/config is one of Github, Gitlab or Bitbucket."))
     (unless project
