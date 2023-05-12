@@ -90,9 +90,12 @@
 
 (defun git-commit-insert-issue-github-issues (&optional username project-name)
   "Return a plist of github issues, raw from the api request."
-  (let ((group/project (or username (git-commit-insert-issue--get-group/project)))
-        (project (or project-name (cadr (group/project)))))
-    (ghub-get (s-concat "/repos/" (car group/project) "/" project "/issues") nil :auth 'none)))
+  (let* ((group/project (if (and username project-name)
+                            (list username project-name)
+                          (git-commit-insert-issue--get-group/project)))
+         (group (car group/project))
+         (project (cadr group/project)))
+    (ghub-get (concat "/repos/" group "/" project "/issues") nil :auth 'none)))
 
 (defun git-commit-insert-issue-github-issues-format (&optional username project-name)
   "Get all the issues from the current project.
