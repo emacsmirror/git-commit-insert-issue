@@ -62,7 +62,7 @@
          (project (or project (cadr group/project))))
     (format "%s/%s" (car group/project) project)))
 
-(defun git-commit-insert-issue-get-gitlab-issues (projectname username)
+(defun git-commit-insert-issue-get-gitlab-issues (username projectname)
   "Manual call to Gitlab's AP v4: /projects/:id/issues. Get closed issues only.
   The project id is username%2Fprojectname.
   TODO: auth for private projects."
@@ -76,15 +76,19 @@
        (message "%s" (s-concat "id is " id))
        (error (format +git-commit-insert-issues-gitlab-api-error+ username))))))
 
-(defun git-commit-insert-issue-gitlab-issues (&optional projectname username)
+(defun git-commit-insert-issue-gitlab-issues (&optional username projectname )
   "Return a list of the opened issues on gitlab."
-  (git-commit-insert-issue-get-gitlab-issues projectname username))
+  (let* ((group/project (if (and username projectname)
+                            (list username projectname)
+                          (git-commit-insert-issue--get-group/project)))
+         (group (car group/project))
+         (project (cadr group/project)))
+
+  (git-commit-insert-issue-get-gitlab-issues group project)))
 
 (defun git-commit-insert-issue-gitlab-issues-format (&optional username project-name)
   "Get issues and return a list of strings formatted with '#id - title'"
-  (let* ((group/project (or username (git-commit-insert-issue--get-group/project)))
-         (project (or project-name (cadr group/project)))
-         (issues (git-commit-insert-issue-gitlab-issues project (car group/project))))
+  (let* ((issues (git-commit-insert-issue-gitlab-issues username project-name)))
     (--map (format "#%i - %s" (alist-get 'iid it) (alist-get 'title it))
            issues)))
 
